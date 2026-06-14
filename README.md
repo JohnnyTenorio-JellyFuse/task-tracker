@@ -6,7 +6,7 @@ A single-file, self-contained to-do list app — vanilla HTML, CSS, and JavaScri
 
 ## Run It
 
-Open `index.html` directly in any browser. That's it.
+Live demo: https://task-tracker-livid-five.vercel.app/
 
 ---
 
