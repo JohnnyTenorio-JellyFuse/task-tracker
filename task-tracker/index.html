@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #141414;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f5f5f5;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 32px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .input-row input[type="text"] {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      background: #1e1e1e;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      outline: none;
+      transition: border-color 0.15s;
+      color: #f0f0f0;
+    }
+
+    .input-row input[type="text"]:focus {
+      border-color: #ff8c42;
+    }
+
+    .input-row input[type="text"]::placeholder {
+      color: #555;
+    }
+
+    .input-row input[type="date"] {
+      padding: 12px 10px;
+      font-size: 0.85rem;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      background: #1e1e1e;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      outline: none;
+      transition: border-color 0.15s;
+      color: #888;
+      cursor: pointer;
+      width: 130px;
+      flex-shrink: 0;
+    }
+
+    .input-row input[type="date"]:focus {
+      border-color: #ff8c42;
+      color: #f0f0f0;
+    }
+
+    .input-row input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.4);
+      cursor: pointer;
+    }
+
+    .input-row button {
+      padding: 12px 20px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      background: #ff8c42;
+      color: #111;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .input-row button:hover { background: #e07030; }
+    .input-row button:active { transform: scale(0.96); }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      background: #242424;
+      color: #888;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab-btn.active {
+      background: #ff8c42;
+      color: #111;
+    }
+
+    /* ── Task List ── */
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #1e1e1e;
+      padding: 14px 16px;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      animation: slideIn 0.18s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .task.overdue {
+      border-left-color: #ff5555;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .task.done .task-text {
+      text-decoration: line-through;
+      color: #555;
+    }
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid #444;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .task.done .checkbox {
+      background: #ff8c42;
+      border-color: #ff8c42;
+    }
+
+    .checkbox svg { display: none; }
+    .task.done .checkbox svg { display: block; }
+
+    .task-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .task-text {
+      font-size: 0.97rem;
+      color: #e0e0e0;
+      word-break: break-word;
+    }
+
+    .task-date {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .task.overdue .task-date {
+      color: #ff6b6b;
+    }
+
+    .task.done .task-date {
+      color: #444;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #444;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .delete-btn:hover {
+      color: #ff5555;
+      background: #2a1a1a;
+    }
+
+    .empty {
+      text-align: center;
+      color: #555;
+      font-size: 0.9rem;
+      padding: 40px 0;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: #555;
+      text-align: right;
+    }
+
+    .task-edit {
+      background: #2a2a2a;
+      border: 2px solid #ff8c42;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.97rem;
+      color: #f0f0f0;
+      outline: none;
+      width: 100%;
+    }
+
+    /* ── Calendar ── */
+
+    .calendar { display: none; }
+    .calendar.visible { display: block; }
+
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .cal-header span {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    .cal-nav {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1;
+    }
+
+    .cal-nav:hover {
+      background: #242424;
+      color: #f0f0f0;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .cal-day-name {
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #555;
+      padding: 4px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+      gap: 3px;
+    }
+
+    .cal-day:hover:not(.cal-empty) {
+      background: #242424;
+    }
+
+    .cal-day.cal-empty {
+      cursor: default;
+    }
+
+    .cal-day-num {
+      font-size: 0.88rem;
+      color: #888;
+      line-height: 1;
+    }
+
+    .cal-day.today .cal-day-num {
+      color: #ff8c42;
+      font-weight: 700;
+    }
+
+    .cal-day.selected {
+      background: #2a1e14;
+      outline: 2px solid #ff8c42;
+    }
+
+    .cal-day.selected .cal-day-num {
+      color: #ff8c42;
+    }
+
+    .cal-dots {
+      display: flex;
+      gap: 2px;
+    }
+
+    .cal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ff8c42;
+      opacity: 0.7;
+    }
+
+    .cal-dot.done {
+      background: #555;
+      opacity: 1;
+    }
+
+    .cal-day-tasks {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cal-day-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>To-Do</h1>
+    <p class="subtitle" id="subtitle">0 tasks</p>
+
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="Add a new task..." maxlength="200">
+      <input type="date" id="dateInput" title="Due date (optional)">
+      <button id="addBtn" title="Add task">+</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="all">All</button>
+      <button class="tab-btn" data-tab="active">Active</button>
+      <button class="tab-btn" data-tab="done">Done</button>
+      <button class="tab-btn" data-tab="calendar">Calendar</button>
+    </div>
+
+    <div id="listView">
+      <div class="task-list" id="taskList"></div>
+      <div class="empty" id="emptyMsg" style="display:none">Nothing here yet.</div>
+    </div>
+
+    <div class="calendar" id="calendarView">
+      <div class="cal-header">
+        <button class="cal-nav" id="calPrev">&#8249;</button>
+        <span id="calTitle"></span>
+        <button class="cal-nav" id="calNext">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-day-tasks" id="calDayTasks"></div>
+    </div>
+
+    <div class="footer" id="footer"></div>
+  </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    let filter = 'all';
+    let view   = 'list';
+
+    const today = new Date();
+    let calYear  = today.getFullYear();
+    let calMonth = today.getMonth();
+    let selectedDay = null; // 'YYYY-MM-DD'
+
+    const taskInput   = document.getElementById('taskInput');
+    const dateInput   = document.getElementById('dateInput');
+    const taskList    = document.getElementById('taskList');
+    const emptyMsg    = document.getElementById('emptyMsg');
+    const subtitle    = document.getElementById('subtitle');
+    const footer      = document.getElementById('footer');
+    const listView    = document.getElementById('listView');
+    const calendarView = document.getElementById('calendarView');
+    const calGrid     = document.getElementById('calGrid');
+    const calTitle    = document.getElementById('calTitle');
+    const calDayTasks = document.getElementById('calDayTasks');
+
+    // ── Helpers ──────────────────────────────────────────────
+
+    function save() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function todayStr() {
+      return fmtDate(today);
+    }
+
+    function fmtDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function friendlyDate(iso) {
+      if (!iso) return '';
+      const [y, m, d] = iso.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      const t  = todayStr();
+      if (iso === t) return 'Today';
+      const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+      if (iso === fmtDate(tomorrow)) return 'Tomorrow';
+      const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+      if (iso === fmtDate(yesterday)) return 'Yesterday';
+      return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: dt.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
+    }
+
+    function isOverdue(task) {
+      return task.dueDate && !task.done && task.dueDate < todayStr();
+    }
+
+    // ── Task rendering ───────────────────────────────────────
+
+    function renderTask(task) {
+      const el = document.createElement('div');
+      el.className = 'task' + (task.done ? ' done' : '') + (isOverdue(task) ? ' overdue' : '');
+
+      const dateLabel = task.dueDate
+        ? `<span class="task-date">${friendlyDate(task.dueDate)}</span>`
+        : '';
+
+      el.innerHTML = `
+        <div class="checkbox" data-id="${task.id}" title="Toggle complete">
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+            <path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="task-body">
+          <span class="task-text" data-id="${task.id}" title="Double-click to edit">${escapeHtml(task.text)}</span>
+          ${dateLabel}
+        </div>
+        <button class="delete-btn" data-id="${task.id}" title="Delete">&#x2715;</button>
+      `;
+      return el;
+    }
+
+    function render() {
+      const t = todayStr();
+      const filtered = tasks.filter(task => {
+        if (filter === 'active') return !task.done;
+        if (filter === 'done')   return  task.done;
+        return true;
+      });
+
+      taskList.innerHTML = '';
+      filtered.forEach(task => taskList.appendChild(renderTask(task)));
+
+      const total     = tasks.length;
+      const done      = tasks.filter(t => t.done).length;
+      const remaining = total - done;
+
+      emptyMsg.style.display = filtered.length === 0 ? 'block' : 'none';
+      subtitle.textContent   = `${remaining} task${remaining !== 1 ? 's' : ''} remaining`;
+      footer.textContent     = done > 0 ? `${done} of ${total} completed` : '';
+    }
+
+    // ── Calendar rendering ───────────────────────────────────
+
+    function renderCalendar() {
+      const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const MONTHS = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+
+      calTitle.textContent = `${MONTHS[calMonth]} ${calYear}`;
+
+      // Build a map: 'YYYY-MM-DD' -> tasks[]
+      const tasksByDay = {};
+      tasks.forEach(task => {
+        if (task.dueDate) {
+          if (!tasksByDay[task.dueDate]) tasksByDay[task.dueDate] = [];
+          tasksByDay[task.dueDate].push(task);
+        }
+      });
+
+      calGrid.innerHTML = '';
+
+      // Day name headers
+      DAYS.forEach(d => {
+        const cell = document.createElement('div');
+        cell.className = 'cal-day-name';
+        cell.textContent = d;
+        calGrid.appendChild(cell);
+      });
+
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const t = todayStr();
+
+      // Empty cells before the 1st
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-day cal-empty';
+        calGrid.appendChild(empty);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const cell = document.createElement('div');
+        cell.className = 'cal-day'
+          + (iso === t ? ' today' : '')
+          + (iso === selectedDay ? ' selected' : '');
+
+        const num = document.createElement('div');
+        num.className = 'cal-day-num';
+        num.textContent = d;
+        cell.appendChild(num);
+
+        const dayTasks = tasksByDay[iso] || [];
+        if (dayTasks.length) {
+          const dots = document.createElement('div');
+          dots.className = 'cal-dots';
+          dayTasks.slice(0, 3).forEach(task => {
+            const dot = document.createElement('div');
+            dot.className = 'cal-dot' + (task.done ? ' done' : '');
+            dots.appendChild(dot);
+          });
+          cell.appendChild(dots);
+        }
+
+        cell.addEventListener('click', () => {
+          selectedDay = (selectedDay === iso) ? null : iso;
+          renderCalendar();
+        });
+
+        calGrid.appendChild(cell);
+      }
+
+      // Selected day task list below calendar
+      calDayTasks.innerHTML = '';
+      if (selectedDay) {
+        const dayTasks = tasksByDay[selectedDay] || [];
+        const label = document.createElement('div');
+        label.className = 'cal-day-label';
+        label.textContent = dayTasks.length
+          ? friendlyDate(selectedDay)
+          : `${friendlyDate(selectedDay)} — no tasks`;
+        calDayTasks.appendChild(label);
+        dayTasks.forEach(task => calDayTasks.appendChild(renderTask(task)));
+      }
+    }
+
+    // ── Mutations ────────────────────────────────────────────
+
+    function addTask() {
+      const text = taskInput.value.trim();
+      if (!text) return;
+      tasks.unshift({ id: Date.now(), text, done: false, dueDate: dateInput.value || null });
+      taskInput.value = '';
+      dateInput.value = '';
+      save();
+      if (view === 'calendar') renderCalendar(); else render();
+    }
+
+    function toggleTask(id) {
+      const t = tasks.find(t => t.id === id);
+      if (t) t.done = !t.done;
+      save();
+      if (view === 'calendar') renderCalendar(); else render();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      save();
+      if (view === 'calendar') renderCalendar(); else render();
+    }
+
+    function startEdit(span, id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'task-edit';
+      input.value = task.text;
+      input.maxLength = 200;
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+
+      function commit() {
+        const val = input.value.trim();
+        if (val) task.text = val;
+        save();
+        if (view === 'calendar') renderCalendar(); else render();
+      }
+
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  input.blur();
+        if (e.key === 'Escape') { input.value = task.text; input.blur(); }
+      });
+    }
+
+    // ── View switching ───────────────────────────────────────
+
+    function switchView(tab) {
+      view = tab === 'calendar' ? 'calendar' : 'list';
+      filter = tab === 'calendar' ? 'all' : tab;
+
+      listView.style.display    = view === 'list'     ? 'block'  : 'none';
+      calendarView.classList.toggle('visible', view === 'calendar');
+
+      if (view === 'calendar') renderCalendar(); else render();
+    }
+
+    // ── Event delegation ─────────────────────────────────────
+
+    function handleTaskClick(e) {
+      const checkbox = e.target.closest('.checkbox');
+      const delBtn   = e.target.closest('.delete-btn');
+      if (checkbox) toggleTask(Number(checkbox.dataset.id));
+      if (delBtn)   deleteTask(Number(delBtn.dataset.id));
+    }
+
+    function handleTaskDblclick(e) {
+      const span = e.target.closest('.task-text');
+      if (span) startEdit(span, Number(span.dataset.id));
+    }
+
+    taskList.addEventListener('click',    handleTaskClick);
+    taskList.addEventListener('dblclick', handleTaskDblclick);
+    calDayTasks.addEventListener('click',    handleTaskClick);
+    calDayTasks.addEventListener('dblclick', handleTaskDblclick);
+
+    document.getElementById('addBtn').addEventListener('click', addTask);
+    taskInput.addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        switchView(btn.dataset.tab);
+      });
+    });
+
+    document.getElementById('calPrev').addEventListener('click', () => {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    });
+
+    document.getElementById('calNext').addEventListener('click', () => {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    });
+
+    // ── Init ─────────────────────────────────────────────────
+
+    render();
+  </script>
+</body>
+</html>
